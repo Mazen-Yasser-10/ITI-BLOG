@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StorePostRequest;
 use App\Models\Post;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -13,7 +14,6 @@ class PostController extends Controller
     public function index()
     {
         $posts = Post::with(['user:id,name'])
-        ->withTrashed()
         ->latest('id')
         ->paginate(100);
         return view('posts.index', ['posts' => $posts]);
@@ -43,14 +43,14 @@ class PostController extends Controller
         return view('posts.create',['users' => $users]);
     }
 
-    public function store(StorePostRequest $request)
+    public function store(StorePostRequest $request, User $user)
     {
         $filename = Str::uuid() . '.' . $request->file('image')->getClientOriginalExtension();
-        $path = $request->file('image')->storeAs('images', $filename, 'public');
+        $path = $request->file('image')->storeAs('posts_images', $filename, 'public');
         $post = Post::create([
             'title' => $request->title,
             'description' => $request->description,
-            'user_id' => $request->user_id,
+            'user_id' => Auth::id(),
             'image' => $path,
             'slug' => Str::slug('title')
         ]);
@@ -59,8 +59,8 @@ class PostController extends Controller
 
     public function edit(Post $post)
     {
-        $users = User::all();
-        return view('posts.edit', ['post' => $post, 'users' => $users]);
+        if(Auth::id() == $post->user_id)
+        return view('posts.edit', ['post' => $post]);
     }
 
     public function destroy(Post $post)
@@ -72,9 +72,9 @@ class PostController extends Controller
     {
         $image = $request->file('image');
         if ($image) {
-            Storage::disk('public')->delete('public/images/'.$post->image);
+            Storage::disk('public')->delete('public/posts_images/'.$post->image);
             $filename = Str::uuid() . '.' . $image->getClientOriginalExtension();
-            $path = $image->storeAs('images', $filename, 'public');
+            $path = $image->storeAs('posts_images', $filename, 'public');
             $post->image = $path;
         }
         $post->title = $request->title;
@@ -89,13 +89,22 @@ class PostController extends Controller
     {
         $post = Post::withTrashed()->find($id);
         $post->restore();
-        return redirect()->route('posts.index');
+        return redirect()->route('posts.bin');
     }
     public function forceDelete($id)
     {
         $post = Post::withTrashed()->find($id);
-        Storage::disk('public')->delete('public/images/'.$post->image);
+        Storage::disk('public')->delete('public/posts_images/'.$post->image);
         $post->forceDelete();
-        return redirect()->route('posts.index');
+        return redirect()->route('posts.bin');
+    }
+    public function showTrashed()
+    {
+        $posts = Post::onlyTrashed()->get();
+        return view('posts.bin', ['posts' => $posts]);
+    }
+    public function showUser(User $user)
+    {
+        return view('users.show', ['user' => $user]);
     }
 }

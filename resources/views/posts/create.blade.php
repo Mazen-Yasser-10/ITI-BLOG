@@ -25,15 +25,6 @@
             <textarea type="text" class="form-control" name="description" value = "{{ old('description') }}"></textarea>
         </div>
         <div class="form-group">
-            <label for="user_id">Post Creator : </label>
-            <select id="user_id" name="user_id">
-                <option value="">Select User</option>
-                @foreach ($users as $user)
-                    <option value="{{ $user['id'] }}" {{ ($user['id'] == old('user_id'))? 'selected' : '' }} >{{ $user['name'] }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div class="form-group">
             <label for="image">Image</label>
             <input type="file" class="form-control" name="image" value = "{{ old('image') }}">
         </div>

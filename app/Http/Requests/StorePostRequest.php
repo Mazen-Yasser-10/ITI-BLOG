@@ -24,8 +24,7 @@ class StorePostRequest extends FormRequest
         return [
             'title' => 'required|string|min:3|unique:posts,title,'.optional($this->post)->id,
             'description' => 'required|string|min:10',
-            'user_id' => 'required|exists:users,id',
-            'image' => 'nullable|image|mimes:png,jpg|max:2048',
+            'image' => 'nullable|image|mimes:png,jpg|max:4096',
         ];
     }
 
